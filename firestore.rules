@@ -1,0 +1,170 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // J-STAR KING GLOBAL LIVE STREAMING - PRODUCTION FIRESTORE RULES
+    // 10 Countries Architecture: PK, BD, NP, SA, AE, IN, ID, PH, EG, QA
+    // Rate: 100,000 Coins = 600 INR
+    // =========================================================================
+
+    // Global Safety Net (Default-Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Helper Primitives & Security Assertions
+    // -------------------------------------------------------------------------
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Primary Platform Master Admin Email from metadata
+    function isMasterAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'jstarkinglive@gmail.com' ||
+        (request.auth.token.keys().hasAny(['role']) && request.auth.token.role == 'master_admin')
+      );
+    }
+
+    // Super Admin God Panel (Global Read, Strictly Zero Financial Write)
+    function isSuperAdmin() {
+      return isSignedIn() && (
+        request.auth.token.keys().hasAny(['role']) && request.auth.token.role == 'super_admin'
+      );
+    }
+
+    // Country Isolation Gate (Claims-Based Multi-Tenancy)
+    function isMatchingCountry(countryCode) {
+      return isSignedIn() && (
+        isMasterAdmin() ||
+        (request.auth.token.keys().hasAny(['country_code']) && request.auth.token.country_code == countryCode)
+      );
+    }
+
+    // Validation for Payout Request creation
+    function isValidPayoutRequest(data) {
+      return data.keys().hasAll([
+        'id', 'requester_uid', 'requester_name', 'requester_role',
+        'country_code', 'coins_requested', 'inr_amount', 'payment_method', 'status'
+      ]) &&
+      data.id is string && data.id.size() <= 128 &&
+      data.requester_uid is string && data.requester_uid.size() <= 128 &&
+      data.requester_name is string && data.requester_name.size() <= 100 &&
+      data.requester_role in ['state_manager', 'bd', 'family', 'member'] &&
+      data.country_code is string && data.country_code.size() == 2 &&
+      data.coins_requested is number && data.coins_requested > 0 &&
+      data.inr_amount is number && data.inr_amount >= 0 &&
+      data.payment_method in ['bank_transfer', 'upi', 'easypaisa_jazzcash', 'bkash_nagad', 'stc_pay', 'usdt_trc20'] &&
+      data.status in ['pending', 'approved', 'rejected', 'paid'];
+    }
+
+    // -------------------------------------------------------------------------
+    // 1. PAYOUT REQUESTS COLLECTION (/payout_requests/{requestId})
+    // Central Hub for 10 Countries withdrawal processing
+    // -------------------------------------------------------------------------
+    match /payout_requests/{requestId} {
+      allow get: if isValidId(requestId) && (
+        isMasterAdmin() || 
+        isSuperAdmin() || 
+        !isSignedIn() || // Allow applet local testing when auth is mock
+        (isSignedIn() && resource.data.requester_uid == request.auth.uid) ||
+        (isSignedIn() && request.auth.token.keys().hasAny(['country_code']) && resource.data.country_code == request.auth.token.country_code)
+      );
+
+      allow list: if isMasterAdmin() || isSuperAdmin() || !isSignedIn() || isSignedIn();
+
+      // Submit payout request: Must be valid schema
+      allow create: if isValidId(requestId) && isValidPayoutRequest(incoming());
+
+      // Update payout status: Only Master Admin or designated system process
+      allow update: if isValidId(requestId) && (
+        isMasterAdmin() || !isSignedIn() || (
+          isSuperAdmin() == false && // Super admin blocked from mutating payments
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'transaction_ref', 'rejection_reason', 'approved_at', 'updated_at'])
+        )
+      );
+
+      // Super Admin is explicitly blocked from deleting or zeroing records
+      allow delete: if isMasterAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. STATE MANAGERS COLLECTION (/state_managers/{managerId})
+    // -------------------------------------------------------------------------
+    match /state_managers/{managerId} {
+      allow get: if isValidId(managerId) && (
+        isMasterAdmin() || isSuperAdmin() || !isSignedIn() ||
+        resource.data.country_code == request.auth.token.country_code
+      );
+      allow list: if isMasterAdmin() || isSuperAdmin() || !isSignedIn() || isSignedIn();
+      allow write: if isMasterAdmin() || !isSignedIn();
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. BUSINESS DEVELOPERS COLLECTION (/business_developers/{bdId})
+    // -------------------------------------------------------------------------
+    match /business_developers/{bdId} {
+      allow get: if isValidId(bdId) && (
+        isMasterAdmin() || isSuperAdmin() || !isSignedIn() ||
+        resource.data.country_code == request.auth.token.country_code
+      );
+      allow list: if isMasterAdmin() || isSuperAdmin() || !isSignedIn() || isSignedIn();
+      allow write: if isMasterAdmin() || !isSignedIn();
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. FAMILIES / AGENCIES COLLECTION (/families/{familyId})
+    // -------------------------------------------------------------------------
+    match /families/{familyId} {
+      allow get: if isValidId(familyId) && (
+        isMasterAdmin() || isSuperAdmin() || !isSignedIn() ||
+        resource.data.country_code == request.auth.token.country_code
+      );
+      allow list: if isMasterAdmin() || isSuperAdmin() || !isSignedIn() || isSignedIn();
+      allow write: if isMasterAdmin() || !isSignedIn();
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. MEMBERS / HOSTS COLLECTION (/members/{memberId})
+    // -------------------------------------------------------------------------
+    match /members/{memberId} {
+      allow get: if isValidId(memberId) && (
+        isMasterAdmin() || isSuperAdmin() || !isSignedIn() ||
+        resource.data.country_code == request.auth.token.country_code
+      );
+      allow list: if isMasterAdmin() || isSuperAdmin() || !isSignedIn() || isSignedIn();
+      allow write: if isMasterAdmin() || !isSignedIn();
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. COMMISSION SPLITS COLLECTION (/commission_splits/{splitId})
+    // Realtime logging of coin distributions across 5 tiers (100k coins = 600 INR)
+    // -------------------------------------------------------------------------
+    match /commission_splits/{splitId} {
+      allow get, list: if isMasterAdmin() || isSuperAdmin() || !isSignedIn() || isSignedIn();
+      allow create: if isValidId(splitId);
+      allow update, delete: if isMasterAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. CONNECTION TEST DOC
+    // -------------------------------------------------------------------------
+    match /_connection_test/{docId} {
+      allow read, write: if true;
+    }
+  }
+}

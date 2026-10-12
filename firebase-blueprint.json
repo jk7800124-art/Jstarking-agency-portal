@@ -1,0 +1,226 @@
+{
+  "entities": {
+    "PayoutRequest": {
+      "title": "PayoutRequest",
+      "description": "Financial payout request submitted by a Country Manager, BD, Agency, or Host Streamer based on 100,000 Coins = 600 INR rate",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique payout request identifier",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "requester_uid": {
+          "type": "string",
+          "description": "UID of the user making the payout request",
+          "maxLength": 128
+        },
+        "requester_name": {
+          "type": "string",
+          "description": "Full name or handle of requester",
+          "maxLength": 100
+        },
+        "requester_role": {
+          "type": "string",
+          "description": "Role in the agency hierarchy",
+          "enum": ["state_manager", "bd", "family", "member"]
+        },
+        "country_code": {
+          "type": "string",
+          "description": "ISO 3166-1 alpha-2 country code",
+          "pattern": "^[A-Z]{2}$",
+          "maxLength": 2
+        },
+        "coins_requested": {
+          "type": "number",
+          "description": "Amount of coins to be withdrawn"
+        },
+        "inr_amount": {
+          "type": "number",
+          "description": "Calculated value in Indian Rupees (100,000 coins = 600 INR)"
+        },
+        "local_currency_amount": {
+          "type": "number",
+          "description": "Equivalent value in requester local currency"
+        },
+        "local_currency_symbol": {
+          "type": "string",
+          "description": "Currency symbol",
+          "maxLength": 10
+        },
+        "payment_method": {
+          "type": "string",
+          "description": "Chosen payout channel",
+          "enum": ["bank_transfer", "upi", "easypaisa_jazzcash", "bkash_nagad", "stc_pay", "usdt_trc20"]
+        },
+        "payment_details": {
+          "type": "object",
+          "description": "Beneficiary banking or wallet details"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional remarks from requester",
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the payout request",
+          "enum": ["pending", "approved", "rejected", "paid"]
+        },
+        "rejection_reason": {
+          "type": "string",
+          "description": "Reason for refusal if rejected by Admin",
+          "maxLength": 300
+        },
+        "transaction_ref": {
+          "type": "string",
+          "description": "Bank UTR or wallet transaction hash after settlement",
+          "maxLength": 128
+        },
+        "created_at": {
+          "type": "string",
+          "description": "ISO timestamp of creation"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": [
+        "id",
+        "requester_uid",
+        "requester_name",
+        "requester_role",
+        "country_code",
+        "coins_requested",
+        "inr_amount",
+        "payment_method",
+        "status"
+      ]
+    },
+    "StateManager": {
+      "title": "StateManager",
+      "description": "Country head manager presiding over one isolated country",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "country_code": { "type": "string", "maxLength": 2 },
+        "name": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["state_manager"] },
+        "parent_id": { "type": "string", "maxLength": 128 },
+        "commission_percentage": { "type": "number" },
+        "wallet_coins": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "suspended", "pending"] }
+      },
+      "required": ["id", "country_code", "name", "role", "parent_id", "wallet_coins"]
+    },
+    "BusinessDeveloper": {
+      "title": "BusinessDeveloper",
+      "description": "BD reporting directly to a State Manager",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "country_code": { "type": "string", "maxLength": 2 },
+        "parent_id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["bd"] },
+        "assigned_region_name": { "type": "string", "maxLength": 100 },
+        "commission_percentage": { "type": "number" },
+        "wallet_coins": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "suspended", "pending"] }
+      },
+      "required": ["id", "country_code", "parent_id", "name", "role", "wallet_coins"]
+    },
+    "FamilyAgency": {
+      "title": "FamilyAgency",
+      "description": "Agency hosting live streamers and reporting to a BD",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "country_code": { "type": "string", "maxLength": 2 },
+        "parent_id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "agency_code": { "type": "string", "maxLength": 50 },
+        "role": { "type": "string", "enum": ["family"] },
+        "leader_name": { "type": "string", "maxLength": 100 },
+        "commission_percentage": { "type": "number" },
+        "wallet_coins": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "suspended", "pending"] }
+      },
+      "required": ["id", "country_code", "parent_id", "name", "agency_code", "role", "wallet_coins"]
+    },
+    "HostMember": {
+      "title": "HostMember",
+      "description": "Live streaming host earning coins during broadcasts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "country_code": { "type": "string", "maxLength": 2 },
+        "parent_id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "agency_code": { "type": "string", "maxLength": 50 },
+        "role": { "type": "string", "enum": ["member"] },
+        "category": { "type": "string", "maxLength": 50 },
+        "coins_current_month": { "type": "number" },
+        "wallet_balance_coins": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "suspended", "pending"] }
+      },
+      "required": ["id", "country_code", "parent_id", "name", "agency_code", "role", "wallet_balance_coins"]
+    },
+    "CommissionSplit": {
+      "title": "CommissionSplit",
+      "description": "Live real-time commission split event logging distribution of coins and INR to 5 tiers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "streamer_name": { "type": "string", "maxLength": 100 },
+        "country_code": { "type": "string", "maxLength": 2 },
+        "total_gift_coins": { "type": "number" },
+        "total_inr_amount": { "type": "number" },
+        "host_coins": { "type": "number" },
+        "host_inr": { "type": "number" },
+        "family_coins": { "type": "number" },
+        "family_inr": { "type": "number" },
+        "family_name": { "type": "string" },
+        "bd_coins": { "type": "number" },
+        "bd_inr": { "type": "number" },
+        "bd_name": { "type": "string" },
+        "state_manager_coins": { "type": "number" },
+        "state_manager_inr": { "type": "number" },
+        "state_manager_name": { "type": "string" },
+        "platform_coins": { "type": "number" },
+        "platform_inr": { "type": "number" },
+        "status": { "type": "string", "enum": ["completed", "pending"] },
+        "created_at": { "type": "string" }
+      },
+      "required": ["id", "streamer_name", "country_code", "total_gift_coins", "total_inr_amount"]
+    }
+  },
+  "firestore": {
+    "/payout_requests/{payoutRequestId}": {
+      "schema": { "$ref": "#/entities/PayoutRequest" },
+      "description": "Collection of all live payout withdrawal requests submitted across the 10 countries"
+    },
+    "/state_managers/{managerId}": {
+      "schema": { "$ref": "#/entities/StateManager" },
+      "description": "Country head accounts isolated by country_code"
+    },
+    "/business_developers/{bdId}": {
+      "schema": { "$ref": "#/entities/BusinessDeveloper" },
+      "description": "Business developers linked to parent state manager"
+    },
+    "/families/{familyId}": {
+      "schema": { "$ref": "#/entities/FamilyAgency" },
+      "description": "Agencies linked to parent business developer"
+    },
+    "/members/{memberId}": {
+      "schema": { "$ref": "#/entities/HostMember" },
+      "description": "Live host streamers belonging to agency families"
+    },
+    "/commission_splits/{splitId}": {
+      "schema": { "$ref": "#/entities/CommissionSplit" },
+      "description": "Live realtime commission distribution logs synced to Firebase"
+    }
+  }
+}
