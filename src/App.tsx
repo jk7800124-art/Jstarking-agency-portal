@@ -1,29 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header, ActivePersona, ISOLATED_PERSONAS } from './components/Header';
 import { SuperAdminGlobalView } from './components/SuperAdminGlobalView';
 import { IsolatedCountryPortal } from './components/IsolatedCountryPortal';
 import { IsolatedBDPortal } from './components/IsolatedBDPortal';
 import { IsolatedAgencyPortal } from './components/IsolatedAgencyPortal';
-import { StandaloneCodeViewer } from './components/StandaloneCodeViewer';
-import { RulesViewer } from './components/RulesViewer';
 import { CommissionCalculator } from './components/CommissionCalculator';
-
 import { AdminPayoutsPanel } from './components/AdminPayoutsPanel';
+import { LoginScreen, AuthenticatedUser } from './components/LoginScreen';
 
 export default function App() {
-  // Default to PK State Manager so user immediately sees the pure isolated Pakistan dashboard without other countries!
+  const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
   const [currentPersona, setCurrentPersona] = useState<ActivePersona>(ISOLATED_PERSONAS[1]); 
-  const [activeNavTab, setActiveNavTab] = useState<'portal' | 'admin_payouts' | 'code' | 'rules' | 'calculator'>('portal');
+  const [activeNavTab, setActiveNavTab] = useState<'portal' | 'admin_payouts' | 'calculator'>('portal');
+
+  // Check if session exists in sessionStorage (sessionStorage clears automatically when tab/browser closes)
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('jsk_auth_session');
+      if (stored) {
+        const parsed: AuthenticatedUser = JSON.parse(stored);
+        setCurrentUser(parsed);
+        if (parsed.persona) {
+          setCurrentPersona(parsed.persona);
+        }
+      }
+    } catch (e) {
+      console.warn('Session check warning:', e);
+    }
+  }, []);
+
+  const handleLoginSuccess = (user: AuthenticatedUser) => {
+    setCurrentUser(user);
+    setCurrentPersona(user.persona);
+    setActiveNavTab(user.role === 'super_admin' ? 'admin_payouts' : 'portal');
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('jsk_auth_session');
+    setCurrentUser(null);
+  };
+
+  // If user is not authenticated, display login screen prompting for email and password
+  if (!currentUser) {
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500/30 selection:text-amber-200">
       
-      {/* Dynamic Header with Simulator */}
+      {/* Dynamic Header */}
       <Header
         currentPersona={currentPersona}
         onPersonaChange={(newPersona) => setCurrentPersona(newPersona)}
         activeNavTab={activeNavTab}
         onNavTabChange={(tab) => setActiveNavTab(tab)}
+        userEmail={currentUser.email}
+        onLogout={handleLogout}
       />
 
       {/* Main Viewport */}
@@ -64,39 +96,7 @@ export default function App() {
           </div>
         )}
 
-        {/* NAV TAB 2: STANDALONE ARCHITECTURE CODE (SUPER ADMIN ONLY) */}
-        {activeNavTab === 'code' && (
-          <div className="animate-in fade-in duration-200">
-            {currentPersona.role === 'super_admin' ? (
-              <StandaloneCodeViewer />
-            ) : (
-              <div className="p-8 text-center bg-slate-900 border border-rose-500/30 rounded-2xl space-y-2">
-                <div className="text-rose-400 font-bold text-sm">⛔ Access Denied &bull; Protected Credentials</div>
-                <p className="text-xs text-slate-400">
-                  Firebase production architecture is strictly restricted to Central Master Super Admin.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* NAV TAB 3: FIREBASE SECURITY RULES (SUPER ADMIN ONLY) */}
-        {activeNavTab === 'rules' && (
-          <div className="animate-in fade-in duration-200">
-            {currentPersona.role === 'super_admin' ? (
-              <RulesViewer />
-            ) : (
-              <div className="p-8 text-center bg-slate-900 border border-rose-500/30 rounded-2xl space-y-2">
-                <div className="text-rose-400 font-bold text-sm">⛔ Access Denied &bull; Protected Credentials</div>
-                <p className="text-xs text-slate-400">
-                  Security rules are strictly restricted to Central Master Super Admin.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* NAV TAB 4: COMMISSION SPLIT ENGINE */}
+        {/* NAV TAB 3: COMMISSION SPLIT ENGINE */}
         {activeNavTab === 'calculator' && (
           <div className="animate-in fade-in duration-200">
             <CommissionCalculator />

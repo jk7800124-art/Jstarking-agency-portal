@@ -138,21 +138,25 @@ export const ISOLATED_PERSONAS: ActivePersona[] = [
 interface HeaderProps {
   currentPersona: ActivePersona;
   onPersonaChange: (persona: ActivePersona) => void;
-  activeNavTab: 'portal' | 'admin_payouts' | 'code' | 'rules' | 'calculator';
-  onNavTabChange: (tab: 'portal' | 'admin_payouts' | 'code' | 'rules' | 'calculator') => void;
+  activeNavTab: 'portal' | 'admin_payouts' | 'calculator';
+  onNavTabChange: (tab: 'portal' | 'admin_payouts' | 'calculator') => void;
+  userEmail?: string;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
   currentPersona, 
   onPersonaChange,
   activeNavTab,
-  onNavTabChange
+  onNavTabChange,
+  userEmail,
+  onLogout
 }) => {
   return (
     <header className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-50 shadow-xl backdrop-blur-md bg-opacity-95">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Top Bar: Brand + Persona Selector */}
+        {/* Top Bar: Brand + User Info + Persona Selector */}
         <div className="flex flex-col md:flex-row items-center justify-between py-3 gap-3">
           
           <div className="flex items-center gap-3">
@@ -165,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
                   J-Star King
                 </span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
-                  STRICT ISOLATED UI
+                  ENTERPRISE SECURE
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -174,49 +178,69 @@ export const Header: React.FC<HeaderProps> = ({
                 </p>
                 <span className="text-[10px] text-emerald-400 font-mono bg-emerald-950/80 border border-emerald-500/40 px-2 py-0.5 rounded flex items-center gap-1.5 shadow-sm">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>Live Firebase: <strong className="text-white">jstarking-live-b5fc1</strong></span>
+                  <span>Database Online &bull; Cloud Verified</span>
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Persona / Login Simulator */}
-          <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
-            <div className="flex items-center gap-1 px-2 text-xs text-slate-400">
-              <UserCheck className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Active Role:</span>
-            </div>
-            
-            <select
-              value={currentPersona.name}
-              onChange={(e) => {
-                const found = ISOLATED_PERSONAS.find((p) => p.name === e.target.value);
-                if (found) onPersonaChange(found);
-              }}
-              className="bg-slate-800 text-xs font-semibold text-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            >
-              {ISOLATED_PERSONAS.map((p) => (
-                <option key={p.name} value={p.name}>
-                  {p.role === 'super_admin' ? '👑 ' : p.role === 'state_manager' ? `🌐 [${p.country_code}] ` : p.role === 'bd' ? '🤝 ' : '🏛️ '}
-                  {p.name}
-                </option>
-              ))}
-            </select>
+          {/* Persona / Login Switcher + User Email Badge + Logout */}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {userEmail && (
+              <div className="hidden lg:flex items-center gap-1 px-2.5 py-1 bg-slate-950/80 border border-slate-800 rounded-lg text-[11px] font-mono text-slate-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span className="truncate max-w-[160px]">{userEmail}</span>
+              </div>
+            )}
 
-            {currentPersona.role === 'super_admin' ? (
-              <span className="text-[10px] font-bold px-2 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                10 COUNTRIES
-              </span>
-            ) : (
-              <span className="text-[10px] font-bold px-2 py-1 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono">
-                {currentPersona.country_code} ISOLATED
-              </span>
+            <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-1 px-2 text-xs text-slate-400">
+                <UserCheck className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Portal:</span>
+              </div>
+              
+              <select
+                value={currentPersona.name}
+                onChange={(e) => {
+                  const found = ISOLATED_PERSONAS.find((p) => p.name === e.target.value);
+                  if (found) onPersonaChange(found);
+                }}
+                className="bg-slate-800 text-xs font-semibold text-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              >
+                {ISOLATED_PERSONAS.map((p) => (
+                  <option key={p.name} value={p.name}>
+                    {p.role === 'super_admin' ? '👑 ' : p.role === 'state_manager' ? `🌐 [${p.country_code}] ` : p.role === 'bd' ? '🤝 ' : '🏛️ '}
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+
+              {currentPersona.role === 'super_admin' ? (
+                <span className="text-[10px] font-bold px-2 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  10 COUNTRIES
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold px-2 py-1 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono">
+                  {currentPersona.country_code} ISOLATED
+                </span>
+              )}
+            </div>
+
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                title="Log out and require password on next open"
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-950/80 hover:text-rose-300 hover:border-rose-700/60 border border-slate-700 text-xs font-bold text-slate-300 transition flex items-center gap-1.5 shadow-sm"
+              >
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                <span>Log Out</span>
+              </button>
             )}
           </div>
 
         </div>
 
-        {/* Global Navigation Tabs */}
+        {/* Global Navigation Tabs (Zero Developer Code / Zero Raw Keys) */}
         <div className="flex items-center gap-2 border-t border-slate-800/80 pt-2 pb-1 overflow-x-auto text-xs">
           <button
             onClick={() => onNavTabChange('portal')}
@@ -239,36 +263,9 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <span>Central Web Admin &bull; Payout Requests Hub</span>
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-900/80 text-emerald-300">
-              LIVE FIREBASE
+              LIVE FIRESTORE
             </span>
           </button>
-
-          {/* Developer Architecture & Rules - STRICTLY RESTRICTED TO MASTER/SUPER ADMIN ONLY */}
-          {currentPersona.role === 'super_admin' && (
-            <>
-              <button
-                onClick={() => onNavTabChange('code')}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1.5 ${
-                  activeNavTab === 'code'
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <span>Production Architecture (Master Admin Only)</span>
-              </button>
-
-              <button
-                onClick={() => onNavTabChange('rules')}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1.5 ${
-                  activeNavTab === 'rules'
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <span>firestore.rules (Security Rules)</span>
-              </button>
-            </>
-          )}
 
           <button
             onClick={() => onNavTabChange('calculator')}

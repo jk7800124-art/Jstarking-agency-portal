@@ -103,11 +103,11 @@ export const AdminPayoutsPanel: React.FC = () => {
             </h1>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>LIVE PROJECT: jstarking-live-b5fc1</span>
+              <span>LIVE CLOUD SECURED</span>
             </span>
           </div>
           <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-            Connected to user live Firebase project (<code className="text-amber-300 font-mono">jstarking-live-b5fc1</code>). Realtime Firestore &amp; RTDB sync enabled. Payout requests across all 10 countries stream live to this panel. Rate benchmark: <strong className="text-amber-300">100,000 Coins = ₹600 INR</strong>.
+            Connected to official live Firebase cloud database. Realtime Firestore &amp; RTDB sync enabled. Payout requests across all 10 countries stream live to this panel. Rate benchmark: <strong className="text-amber-300">100,000 Coins = ₹600 INR</strong>.
           </p>
         </div>
 

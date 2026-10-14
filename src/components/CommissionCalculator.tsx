@@ -143,7 +143,7 @@ export const CommissionCalculator: React.FC = () => {
               </h2>
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 font-mono">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Firebase Connected: <strong className="text-white">jstarking-live-b5fc1</strong></span>
+                <span>Firebase Database: <strong className="text-white">Connected &bull; Cloud Verified</strong></span>
               </span>
             </div>
             <p className="text-xs text-slate-300">
